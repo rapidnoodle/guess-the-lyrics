@@ -19,13 +19,13 @@ function switchSection(from, to) {
     to.classList.remove("hidden");
 }
 
-async function chooseSong(key) {
+async function chooseSong(FILE, key) {
     switchSection(chooseSection, loadingSection);
 
     const response = await fetch(`${base}/api/audio/${key}`);
     const data = await response.json();
 
-    const audio = new Audio(`${base}${data.src}`);
+    const audio = new Audio(`${base}/audio/${FILE}/${key}.mp3`);
     let isPlaying = false;
 
     const delay = async (ms) =>
@@ -72,12 +72,12 @@ async function chooseSong(key) {
     switchSection(loadingSection, lyricsSection);
 }
 
-function createOption(key, song) {
+function createOption(FILE, key, song) {
     const li = document.createElement("li");
     li.innerText = song;
     li.style.cursor = "pointer";
     li.addEventListener("click", () => {
-        chooseSong(key);
+        chooseSong(FILE, key);
     });
     listOfSongs.appendChild(li);
 }
@@ -86,9 +86,11 @@ createSession.addEventListener("click", async () => {
     switchSection(startSection, loadingSection);
 
     const response = await fetch(`${base}/api/songs`);
-    const songs = await response.json();
-    for (let key of Object.keys(songs)) {
-        createOption(key, songs[key]);
+    const data = await response.json();
+
+    const FILE = Object.keys(data)[0];
+    for (let key of Object.keys(data[FILE])) {
+        createOption(FILE, key, data[FILE][key]);
     }
 
     switchSection(loadingSection, chooseSection);

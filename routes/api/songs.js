@@ -4,11 +4,13 @@ const express = require("express");
 const router = express.Router();
 
 router.get("", async (req, res) => {
-    const songs = await readJSONData(process.env.FILE);
+    const FILE = process.env.FILE;
+    const songs = await readJSONData(FILE);
     const keys = Object.keys(songs);
     const list = {};
+    list[FILE] = {};
     for (let i = 0; i < keys.length; i++) {
-        list[keys[i]] = songs[keys[i]]["songName"];
+        list[FILE][keys[i]] = songs[keys[i]]["songName"];
     }
     res.json(list);
 });

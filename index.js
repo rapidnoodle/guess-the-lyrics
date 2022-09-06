@@ -8,7 +8,8 @@ const path = require("path");
 
 const app = express();
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use("/public", express.static(path.join(__dirname, "public")));
+app.use("/audio", express.static(path.join(__dirname, "audio")));
 
 app.use("/", routes);
 app.use("/api/audio", audio);
