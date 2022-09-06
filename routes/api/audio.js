@@ -14,7 +14,7 @@ router.get("/:id", async (req, res) => {
     const songs = await readJSONData(process.env.FILE);
     const lyrics = songs[id]["lyrics"];
     const offset = Math.random() * (lyrics.length - 9);
-    const guessing = lyrics.slice(offset, offset + 10);
+    let guessing = lyrics.slice(offset, offset + 10);
     if (!guessable(guessing[8]["words"]))
         guessing = lyrics.slice(offset - 1, offset + 9);
     
