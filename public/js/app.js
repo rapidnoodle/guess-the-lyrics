@@ -1,4 +1,4 @@
-const base = "http://localhost:3000";
+const base = window.location.origin || "http://localhost:3000";
 
 const startSection = document.getElementById("start");
 const chooseSection = document.getElementById("choose");
@@ -15,83 +15,98 @@ const playAnswer = document.getElementById("play-answer");
 const startOver = document.getElementById("start-over");
 
 function switchSection(from, to) {
-    from.classList.add("hidden");
-    to.classList.remove("hidden");
+	from.classList.add("hidden");
+	to.classList.remove("hidden");
 }
 
-async function chooseSong(FILE, key) {
-    switchSection(chooseSection, loadingSection);
-
-    const response = await fetch(`${base}/api/audio/${key}`);
-    const data = await response.json();
-
-    const audio = new Audio(`${base}/audio/${FILE}/${key}.mp3`);
-    let isPlaying = false;
-
-    const delay = async (ms) =>
-        new Promise(resolve => setTimeout(resolve, ms));
-    
-    const correctLyric = data.guessing[8]["words"];
-
-    playHint.addEventListener("click", async () => {
-        if (isPlaying) return;
-        isPlaying = true;
-        audio.currentTime = data.hintStart;
-        audio.play();
-        for (let i = 0; i < data.guessing.length - 2; i++) {
-            lyricsText.innerText = data.guessing[i]["words"];
-            await delay(data.guessing[i + 1]["startTimeMs"] - data.guessing[i]["startTimeMs"]);
-        }
-        audio.pause();
-        guess.setAttribute('placeholder', `Hint: ${correctLyric.split(" ").length} words`);
-        guess.classList.remove("hidden");
-        playAnswer.classList.remove("hidden");
-        isPlaying = false;
-    });
-
-    playAnswer.addEventListener("click", async () => {
-        if (isPlaying) return;
-        isPlaying = true;
-        audio.currentTime = data.answerStart;
-        audio.play();
-
-        const message = guess.value === correctLyric ? "Correct: " : "Incorrect: ";
-        lyricsText.innerText = message + correctLyric;
-        startOver.classList.remove("hidden");
-
-        setTimeout(() => {
-            audio.pause();
-            isPlaying = false;
-        }, (data.answerEnd - data.answerStart) * 1000);
-    });
-
-    startOver.addEventListener("click", () => {
-        window.location.href = base;
-    });
-
-    switchSection(loadingSection, lyricsSection);
+function simplifyLyric(lyric) {
+	return lyric
+		.toLowerCase()
+		.replace(/|;|\.|,|\"|!|\?|.\(([^()]+)\)/g, "")
+		.replace("-", " ");
 }
 
-function createOption(FILE, key, song) {
-    const li = document.createElement("li");
-    li.innerText = song;
-    li.style.cursor = "pointer";
-    li.addEventListener("click", () => {
-        chooseSong(FILE, key);
-    });
-    listOfSongs.appendChild(li);
+async function chooseSong(key) {
+	switchSection(chooseSection, loadingSection);
+
+	const response = await fetch(`${base}/api/lyrics/${key}`);
+	const data = await response.json();
+
+	const audio = new Audio(`${base}/tracks/${key}.mp3`);
+	let isPlaying = false;
+
+	const delay = async (sec) =>
+		new Promise((resolve) => setTimeout(resolve, sec * 1000));
+
+	const correctLyric = data.lyricsToGuess[8]["text"];
+
+	playHint.addEventListener("click", async () => {
+		if (isPlaying) return;
+		isPlaying = true;
+		audio.currentTime = data.timeStamps.hintStart;
+		audio.play();
+		for (let i = 0; i < data.lyricsToGuess.length - 2; i++) {
+			lyricsText.innerText = data.lyricsToGuess[i]["text"];
+			await delay(
+				data.lyricsToGuess[i + 1]["start"] -
+					data.lyricsToGuess[i]["start"]
+			);
+		}
+		audio.pause();
+		guess.setAttribute(
+			"placeholder",
+			`Hint: ${correctLyric.split(" ").length} words`
+		);
+		guess.classList.remove("hidden");
+		playAnswer.classList.remove("hidden");
+		isPlaying = false;
+	});
+
+	playAnswer.addEventListener("click", () => {
+		if (isPlaying) return;
+		isPlaying = true;
+		audio.currentTime = data.timeStamps.answerStart;
+		audio.play();
+
+		const guessSimplified = simplifyLyric(guess.value);
+		const answerSimplified = simplifyLyric(correctLyric);
+		const message =
+			guessSimplified === answerSimplified ? "Correct: " : "Incorrect: ";
+		lyricsText.innerText = message + correctLyric;
+		startOver.classList.remove("hidden");
+
+		setTimeout(() => {
+			audio.pause();
+			isPlaying = false;
+		}, (data.timeStamps.answerEnd - data.timeStamps.answerStart) * 1000);
+	});
+
+	startOver.addEventListener("click", () => {
+		window.location.href = base;
+	});
+
+	switchSection(loadingSection, lyricsSection);
+}
+
+function createOption(key, song) {
+	const li = document.createElement("li");
+	li.innerText = song;
+	li.style.cursor = "pointer";
+	li.addEventListener("click", () => {
+		chooseSong(key);
+	});
+	listOfSongs.appendChild(li);
 }
 
 createSession.addEventListener("click", async () => {
-    switchSection(startSection, loadingSection);
+	switchSection(startSection, loadingSection);
 
-    const response = await fetch(`${base}/api/songs`);
-    const data = await response.json();
+	const response = await fetch(`${base}/api/playlists`);
+	const playlists = await response.json();
 
-    const FILE = Object.keys(data)[0];
-    for (let key of Object.keys(data[FILE])) {
-        createOption(FILE, key, data[FILE][key]);
-    }
+	for (const playlist of playlists)
+		for (const song of playlist["songs"])
+			createOption(song["id"], song["name"]);
 
-    switchSection(loadingSection, chooseSection);
+	switchSection(loadingSection, chooseSection);
 });

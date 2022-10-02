@@ -167,10 +167,7 @@ dist
 *.code-workspace
 
 # Ignore Database
-data
-
-# Ignore Audio Files
-*.mp3
+database
 
 # Ignore .DS_Store Files
 *.DS_Store
