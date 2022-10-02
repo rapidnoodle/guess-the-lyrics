@@ -22,8 +22,9 @@ function switchSection(from, to) {
 function simplifyLyric(lyric) {
 	return lyric
 		.toLowerCase()
-		.replace(/|;|\.|,|\"|!|\?|.\(([^()]+)\)/g, "")
-		.replace("-", " ");
+		.replace(/;|\.|,|"|'|!|\?|.\(([^()]+)\)/g, "")
+		.replace("-", " ")
+		.trim();
 }
 
 async function chooseSong(key) {
