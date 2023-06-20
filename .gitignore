@@ -172,6 +172,4 @@ database
 # Ignore .DS_Store Files
 *.DS_Store
 
-# Ignore Audio and Data Files
-
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,node
